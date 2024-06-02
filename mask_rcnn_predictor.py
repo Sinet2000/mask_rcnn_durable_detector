@@ -9,7 +9,9 @@ from decimal import Decimal
 # Import utility functions
 from cjm_psl_utils.core import download_file
 from cjm_pil_utils.core import resize_img
-from utils import draw_masks_pil, draw_bboxes_pil
+from utils import draw_masks_pil, draw_bboxes_pil, save_detection_result
+from models import MaskRCnnDetectorResult
+from models.enums import DetectorType
 
 # Import numpy
 import numpy as np
@@ -127,7 +129,7 @@ class MaskRCnnPredictor:
         input_tensor = torch.randn(1, 3, *input_size)
         return input_tensor
     
-    def process_image_and_get_predictions(self, img_path):
+    def process_image_and_get_predictions(self, img_path, result_img_dir) -> MaskRCnnDetectorResult:
         try:
             # Check if the session object is set
             if not hasattr(self, 'session') or self.session is None:
@@ -182,6 +184,7 @@ class MaskRCnnPredictor:
                 font=self.font_file,
             )
 
+            det_img_filename, det_img_path = save_detection_result(annotated_img, result_img_dir, img_path.name, DetectorType.Mask_R_CNN)
             # display(annotated_img)
 
             # Print the prediction data as a Pandas Series for easy formatting
@@ -196,24 +199,7 @@ class MaskRCnnPredictor:
             label = label.strip()
             value = Decimal(value.strip())
 
-            return label, value, ""
+            return MaskRCnnDetectorResult(label=label, value=value, error_message="", det_img_filename=det_img_filename, det_img_path=det_img_path)
 
-        except FileNotFoundError as e:
-            return "UNKNOWN", Decimal(0.0), str(e)
-        except ValueError as e:
-            return "UNKNOWN", Decimal(0.0), str(e)
         except Exception as e:
-            return "UNKNOWN", Decimal(0.0), str(e)
-
-test_img_path = "./trained-model/images/bb1.jpg"
-trained_model_dir = "./trained-model/content/pytorch-mask-r-cnn-instance-segmentation/2024-04-27_18-10-33/"
-predictor = MaskRCnnPredictor(trained_model_dir)
-predictor.load_colormap()
-predictor.load_model_and_set_session()
-
-label, value, errors = predictor.process_image_and_get_predictions(test_img_path)
-print(label, value, errors)
-
-test_img_path = "./trained-model/images/rr1.jpg"
-label, value, errors = predictor.process_image_and_get_predictions(test_img_path)
-print(label, value, errors)
+            return MaskRCnnDetectorResult(error_message=str(e))

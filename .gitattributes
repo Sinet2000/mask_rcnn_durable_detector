@@ -1,0 +1,2 @@
+trained-model/content/pytorch-mask-r-cnn-instance-segmentation/2024-04-27_18-10-33/*.onnx filter=lfs diff=lfs merge=lfs -text
+trained-model/content/pytorch-mask-r-cnn-instance-segmentation/2024-04-27_18-10-33/Main_data-maskrcnn_resnet50_fpn_v2.onnx filter=lfs diff=lfs merge=lfs -text
