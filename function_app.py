@@ -13,7 +13,9 @@ from models import BlobToProcessQueueMessage, VisioDetectorHttpRequest, ImagePre
 from models.enums import BlobProcessStatus, DetectorType
 from mask_rcnn_predictor import MaskRCnnPredictor
 from visio_detector import VisioDetector
-from utils import get_child_directory_path
+from utils import get_child_directory_path, configure_logging
+
+configure_logging('sys-logs')
 
 blob_container_name = os.environ.get("BlobContainerName")
 blob_connection_string = os.environ.get("BlobConnectionString")
@@ -91,7 +93,7 @@ def image_detection_orchestrator(context: df.DurableOrchestrationContext):
         logging.error(f"An unexpected error occurred: {ex}")
         return ImagePredictionResult(
             image_name=visio_detector_json['fileName'],
-            detector_type=DetectorType.UNKNOWN,
+            detector_type=DetectorType.Mask_R_CNN,
             errors= str(ex),
             has_errors=True
             ).to_json()
@@ -111,9 +113,6 @@ def run_maskrcnn_detection_activity(visioDetectorReqStr: str) -> str:
         detector_type = DetectorType.Mask_R_CNN
         maskrcnn_precition_result = mask_rcnn_predictor.process_image_and_get_predictions(source_img_path, get_child_directory_path(result_img_dir))
 
-        # yolov5_precition_result = VisioDetector.run_yolov_detector_wrapper(visioDetectorModel.file_name, downloaded_file_path)
-
-        # predictions_azure_blob_manager.upload_file_to_blob(yolov5_precition_result.result_img_path, yolov5_precition_result.result_img_name)
         if maskrcnn_precition_result.error_message:
             return ImagePredictionResult(
                 file_name=visioDetectorModel.file_name,
@@ -126,14 +125,14 @@ def run_maskrcnn_detection_activity(visioDetectorReqStr: str) -> str:
             image_name=visioDetectorModel.file_name,
             detector_type=detector_type,
             classification = maskrcnn_precition_result.label,
-            result_img_name=visioDetectorModel.file_name,
+            result_img_name=maskrcnn_precition_result.det_img_filename,
             result_img_path=maskrcnn_precition_result.det_img_path,
             prediction=float(maskrcnn_precition_result.value),
             time_taken=0.5)
         
         predictions_azure_blob_manager.upload_file_to_blob(maskrcnn_precition_result.det_img_path, maskrcnn_precition_result.det_img_filename)
         
-        logging.info(f"run_yolov_detection_activity.Result: {image_prediction_response}")
+        logging.info(f"run_maskrcnn_detection_activity.Result: {image_prediction_response}")
 
         # delete_file_if_exists(downloaded_file_path)
         return image_prediction_response.to_json()

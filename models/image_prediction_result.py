@@ -16,6 +16,9 @@ class ImagePredictionResult:
     errors: str = None
     has_errors: bool = False
     time_taken: float = 0
+    
+    def __str__(self):
+        return f"Image Name: {self.image_name}, Detector Type: {self.detector_type}, Prediction: {self.prediction}, Classification: {self.classification}, Result Image Name: {self.result_img_name}, Result Image Path: {self.result_img_path}, Errors: {self.errors}, Has Errors: {self.has_errors}, Time Taken: {self.time_taken}"
 
     def to_json_dict(self) -> dict:
         # Check if self.classification is None
